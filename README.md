@@ -38,3 +38,6 @@ why not use .js instead of .mjs?
 
 isn't this inefficent compared to X method?
 > yeh there's defo better and faster methods, but this method imo is very extensible and easy to reason about, so this is one of the few times where imo the DX is signifigantly better to the point of eating the inefficiencies.
+
+why not do this in framework X?
+> if your framework can't use native js, said framework doesn't sound very good.

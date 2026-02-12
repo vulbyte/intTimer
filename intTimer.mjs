@@ -36,6 +36,7 @@ export class IntTimer {
 		this.timeoutData = args.timeoutData || undefined; // data to be passed 
 		this.timeoutListeners = args.timeoutListeners || [];
 		this.timeoutDuration = args.timeout || args.timeoutDuration || 10; // duration until Timeout() is called
+		this.lastTimeoutTime = 0; // relative time used to calc differences between time and what not
 		this.killOnTimeout = args.timeout || true; // if false, will repeat until stopped manually
 		this.maxDuration = args.maxDuration || 0; // 0 or less will mean no max timer
 
@@ -52,12 +53,14 @@ export class IntTimer {
 		this.alive = true;
 		this.time = 0;
 
+		let timeSinceLastTimeout //declared here to save on redeclaration processing
 		this.timer = setInterval(() => {
 			if (!this.alive) {
 				clearInterval(this.timer);
 				return;
 			}
 
+			/*
 			if (this.debugMode) {
 				console.log(`intTimer: ${this.name} loop #${this.time}`);
 			}
@@ -79,6 +82,36 @@ export class IntTimer {
 			} else if (this.time % this.timeoutDuration === 0) {
 				this.Timeout();
 			} else if (this.time % this.incr === 0) {
+				this.Tick();
+			}
+
+			this.time += 1;
+			*/
+
+			if (this.debugMode) {
+			    console.log(`intTimer: ${this.name} loop #${this.time}`);
+			}
+
+			if (this.maxDuration > 0 && this.time > this.maxDuration) {
+			    this.alive = false;
+			    clearInterval(this.timer);
+			    return;
+			}
+
+			timeSinceLastTimeout = this.time - (this.lastTimeoutTime || 0);
+			if (
+				this.time - (this.lastTimeoutTime || 0)  // time since last timeout
+				>= this.timeoutDuration
+			) {
+				if(this.tickAndTimeout == true){
+					this.Tick();
+				}	
+				this.Timeout();
+				this.lastTimeoutTime = this.time;
+			}
+
+			// 3. Regular Tick logic (usually happens every second)
+			if (this.time % this.incr === 0) {
 				this.Tick();
 			}
 
@@ -156,7 +189,7 @@ export class IntTimer {
 			console.warn("this.timeoutListeners is undefined for some reason:\n this.timeoutListeners = ", this.timeoutListeners)
 		}
 		if (matchFound == false) {
-			this.timeoutListeners += func;
+			this.timeoutListeners.push(func);
 		}
 		return;
 	}
@@ -167,7 +200,7 @@ export class IntTimer {
 		for (let i = 0; i < this.timeoutListeners.length; ++i) {
 			if (this.timeoutListeners[i] == func) {
 				console.warn('match to attempted add found, not adding the functions due to duplication concerns');
-				this.timeoutListeners.pop(i);
+				this.timeoutListeners.splice(i, 1);
 			}
 		}
 		if (matchFound == false) {
